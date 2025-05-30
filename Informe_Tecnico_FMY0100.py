@@ -85,6 +85,9 @@ for fn in doc.keys():
 
 df = pd.read_csv(name, sep=";")
 
+#Permite mostrar todas las columnas
+pd.set_option('display.max_columns', None)
+
 """## Fase 1: Business Understanding
 
 1. Contexto
@@ -126,15 +129,19 @@ df = pd.read_csv(name, sep=";")
 ---
 3. Hipótesis y Tesis Consideradas:
 
-  - Hipótesis 1 (Categórica):
-  
-    La cantidad de equipamiento y recursos iniciales (Valor equipamiento inicio de ronda del equipo = x) influye significativamente en la probabilidad de ganar una ronda (% de ganar ronda = y).
+- Y Categórica:
 
-  - Hipótesis 2 (Continua):
+    Ganador o perdedor de ronda.
+
+    Hipotesis:
+    La cantidad de equipamiento y recursos iniciales (Valor equipamiento inicio de ronda del equipo = x) influye significativamente en el resultado de ganar o perder una ronda.
+
+  
+- Hipótesis 2 (Continua):
 
     La cantidad de kills por partida en base a las distancias que se recorren dentro de las mismas
 
-  - Hipótesis 3 (Clúster):
+- Hipótesis 3 (Clúster):
 
     Entender el enfoque de juego de los jugadores, si se centran en aportar utilidad, acabar al oponente o dividirse entre ambos puntos.
 
@@ -168,6 +175,11 @@ AGREGAR MAS ESTUDIO VISUALIZAR MAS COSAS, ETC.
 
 # Entender forma del dataframe
 df.shape
+
+print(df.columns)
+
+#para ver el PrimaryAssaultRifle
+df[df['Unnamed: 0'] == 706]
 
 # Se visualizan las variables (columnas)
 df.columns
@@ -260,11 +272,26 @@ cl_df5.head()
 
 cl_df6 = cl_df5.copy()
 
+cl_df6['PrimaryAssaultRifle'].unique()
+
+cl_df6['PrimaryAssaultRifle'].dtype
+
+#Se convierte cada dato en valores binarios (0 y 1) para uso o no uso
+cl_df6['PrimaryAssaultRifle'] = (cl_df6['PrimaryAssaultRifle'] > 0).astype(int)
+cl_df6['PrimarySniperRifle'] = (cl_df6['PrimarySniperRifle'] > 0).astype(int)
+cl_df6['PrimaryHeavy'] = (cl_df6['PrimaryHeavy'] > 0).astype(int)
+cl_df6['PrimarySMG'] = (cl_df6['PrimarySMG'] > 0).astype(int)
+cl_df6['PrimaryPistol'] = (cl_df6['PrimaryPistol'] > 0).astype(int)
+cl_df6['PrimaryAssaultRifle'].unique()
+
+#cl_df6['PrimaryAssaultRifle'] = cl_df6['PrimaryAssaultRifle'].clip(upper=1)
+
 """### Identificar Outliers TODO"""
 
 #Outliers de la distancia recorrida
 
 import seaborn as sns
+import matplotlib.pyplot as plt
 
 # Se crea una copia del dataframe con datos limpios
 outliers1 = cl_df6.copy()
@@ -287,16 +314,23 @@ plt.show()
 
 
 
+"""### Data frame limpio"""
+
+#Se asigna cleandataframe como variable para desarrollo posterior
+cleandataframe = cl_df6.copy()
+
 """### Análisis estadísticos básicos
 
-### Matriz de Correlación
+#### Matriz de Correlación
 """
 
 import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Calcular la matriz de correlación
-correlations = cl_df5.corr()
+cl_df7 = cleandataframe.copy()
+cl_df7 = cl_df7.drop(['RoundId', 'InternalTeamId', 'Unnamed: 0', 'MatchId'], axis=1)
+correlations = cl_df7.corr()
 
 # Ajustar el tamaño del gráfico
 plt.figure(figsize=(12, 10))
@@ -309,13 +343,32 @@ plt.title("Matriz de Correlación")
 plt.tight_layout()
 plt.show()
 
-"""### Y Categorica / h1_df
+"""### Diccionario de variables
+
+#### Variables para Y
+
+Clasificacion (`dfc_`):
+  - Regresion logistica:
+    - `dfc_rl`
+
+  - SVM:
+    - `dfc_svm`
+
+  - Decission Tree Classifier:
+    - `dfc_dtc`
+
+
+Regresión (`dfr_`):
+
+Clúster (`dfcl_`):
+
+### Y Categorica / dfc
 
 #### Copiar datos tratados con anterioridad
 """
 
-#cl_df5 contiene datos limpios y formateados
-h1_df5 = cl_df5.copy()
+#cleandataframe contiene datos limpios y formateados
+dfc1 = cleandataframe.copy()
 
 """#### Revisar correlación entre datos para RoundWinner"""
 
@@ -323,10 +376,33 @@ import matplotlib.pyplot as plt
 import seaborn
 
 #Aplicamos
-correlations = h1_df5.corr()
+correlations = dfc1.corr()
 correlations['RoundWinner'].apply(abs).sort_values(ascending=False)
 
 """#### Conclusiones
+
+Las variables de Survived, TeamStartingEquipmentValue, RoundStartingEquipmentValue, RoundKills, RLethalGrenadesThrown y PrimaryAssaultRifle parecen ser las de mayor relación al momento de definir si es ganador de ronda.
+
+Alta relación con PrimaryPistol nos da indicios de pensar en que las rondas "Eco" (rondas en las cuales los jugadores usan pistolas como arma primaria) son rondas en las cuales los jugadores intentan ganar con mas intensidad y paciencia, ya que sus armas son mas debiles que el resto de armas del juego, por ende, es necesario jugar con un buen posicionamiento y muchas veces resultando en ganar la ronda.
+
+### Hipotesis 3 / h3_df
+
+#### Copiar datos tratados con anterioridad
+"""
+
+h3_df=cl_df5.copy()
+
+"""#### Revisar correlación entre datos"""
+
+corr = h3_df.corr()
+corr['RNonLethalGrenadesThrown'].apply(abs).sort_values(ascending=False)
+
+"""#### Conclusiones
+
+Para la Hipótesis 3 (Clúster):
+* Entender el enfoque de juego de los jugadores, si se centran en aportar utilidad, acabar al oponente o dividirse entre ambos puntos.
+
+En base a lo que buscamos investigar nos debemos centrar en considerar la participación del jugador en las bajas, junto con su uso de granadas no letales para evaluar si realiza jugadas enfocadas en la utilidad. Dado lo anterior, y evaluando las correlaciones con la variable RNonLethalGrenadesThrown, tomaremos las variables RoundKills y RoundAssists, pues si bien no son las que tienen mayor correlación, tampoco es que su correlación sea la más baja y, por contexto, son las más importantes.
 
 Para la Hipótesis 1 (Categórica):
 
@@ -390,52 +466,7 @@ Sub-hipótesis 1:
 
 
 
-"""### Hipotesis 3 / h3_df
-
-#### Copiar datos tratados con anterioridad
-"""
-
-h3_df=cl_df5.copy()
-
-"""#### Revisar correlación entre datos"""
-
-corr = h3_df.corr()
-corr['RNonLethalGrenadesThrown'].apply(abs).sort_values(ascending=False)
-
-"""#### Conclusiones
-
-Para la Hipótesis 3 (Clúster):
-* Entender el enfoque de juego de los jugadores, si se centran en aportar utilidad, acabar al oponente o dividirse entre ambos puntos.
-
-En base a lo que buscamos investigar nos debemos centrar en considerar la participación del jugador en las bajas, junto con su uso de granadas no letales para evaluar si realiza jugadas enfocadas en la utilidad. Dado lo anterior, y evaluando las correlaciones con la variable RNonLethalGrenadesThrown, tomaremos las variables RoundKills y RoundAssists, pues si bien no son las que tienen mayor correlación, tampoco es que su correlación sea la más baja y, por contexto, son las más importantes.
-
-## Diccionario de variables
-
-### Data frame limpio
-"""
-
-#Se asigna cleandataframe como variable para desarrollo posterior
-cleandataframe = cl_df5.copy()
-
-"""### Variables para Y
-
-Clasificacion (`dfc_`):
-  - Regresion logistica:
-    - `dfc_rl`
-
-  - SVM:
-    - `dfc_svm`
-
-  - Decission Tree Classifier:
-    - `dfc_dtc`
-
-
-Regresión (`dfr_`):
-
-Clúster (`dfcl_`):
-
-## Fase 3: Data Preparation
-"""
+"""## Fase 3: Data Preparation"""
 
 # En primera instancia, hacemos una copia de uso del dataframe
 udf = cl_df5.copy()
@@ -469,13 +500,31 @@ Y Categórica:
 La cantidad de equipamiento y recursos iniciales (Valor equipamiento inicio de ronda del equipo = x) influye significativamente en la probabilidad de ganar una ronda (% de ganar ronda = y). GANADOR DE RONDA (GANA O NO GANA)
 
 
-Hipótesis sh1: TravelDistance (mas distacia = ganar)
+Hipótesis h1: TravelDistance (mas distacia = ganar)
 
-Hipótesis sh2: TeamStartingEquipmentValue (valor total team)
+Hipótesis h2: TeamStartingEquipmentValue (valor total team)
 
-Hipótesis sh3: 'TeamStartingEquipmentValue', 'RoundStartingEquipmentValue', 'RoundKills' (todas = ganar)
+Hipótesis h3: 'TeamStartingEquipmentValue', 'RoundStartingEquipmentValue', 'RoundKills' (todas = ganar)
 
 comprar los 3 modelos
+
+RoundWinner	1.000000
+Survived	0.359354
+TeamStartingEquipmentValue	0.327825
+RoundStartingEquipmentValue	0.302564
+PrimaryPistol	0.272089
+RoundKills	0.269227
+MatchWinner	0.229544
+RLethalGrenadesThrown	0.222467
+PrimaryAssaultRifle	0.213736
+RoundHeadshots	0.154698
+Team_Terrorist	0.153498
+Team_CounterTerrorist	0.153498
+RNonLethalGrenadesThrown	0.142072
+RoundFlankKills	0.126874
+RoundAssists	0.121881
+
+Notación utilizada:
 
 Clasificacion (dfc_):
   - Regresion logistica:
@@ -486,11 +535,6 @@ Clasificacion (dfc_):
 
   - Decission Tree Classifier:
     - dfc_dtc
-
-
-Regresión (dfc_):
-
-Clúster (dfc_):
 
 #### Regresión Logística
 
@@ -520,22 +564,22 @@ import matplotlib.pyplot as plt
 import seaborn as sb
 # %matplotlib inline
 
-##df:data frame / rl:regresión logística
-df_rl = cleandataframe.copy()
+##dfc:data frame clasificación / rl:regresión logística
+dfc_rl = cleandataframe.copy()
 
 #RoundWinner (0 - perder / 1 - gana)
 
-df_rl.head()
+dfc_rl.head()
 
-print(df_rl.groupby('RoundWinner').size())
+print(dfc_rl.groupby('RoundWinner').size())
 
-df_rl.columns.values
+dfc_rl.columns.values
 
-df_rl1 = df_rl.copy()
-df_rl1 = df_rl1.filter(['RoundWinner', 'TeamStartingEquipmentValue', 'RoundStartingEquipmentValue', 'RoundKills'])
-df_rl1
+dfc_rl1 = dfc_rl.copy()
+dfc_rl1 = dfc_rl1.filter(['RoundWinner', 'TeamStartingEquipmentValue', 'RoundStartingEquipmentValue', 'RoundKills'])
+dfc_rl1
 
-sb.pairplot(df_rl1, hue='RoundWinner',size=4,vars=['TeamStartingEquipmentValue', 'RoundStartingEquipmentValue', 'RoundKills'],kind='reg')
+sb.pairplot(dfc_rl1, hue='RoundWinner',size=4,vars=['TeamStartingEquipmentValue', 'RoundStartingEquipmentValue', 'RoundKills'],kind='reg')
 
 """#### SVM
 
