@@ -178,9 +178,6 @@ df.shape
 
 print(df.columns)
 
-#para ver el PrimaryAssaultRifle
-df[df['Unnamed: 0'] == 706]
-
 # Se visualizan las variables (columnas)
 df.columns
 
@@ -251,6 +248,12 @@ cl_df4.head()
 
 """#### Tratamiento de valores mal formateados a numéricos"""
 
+cl_df4['TravelledDistance'].dtype
+
+cl_df4['TravelledDistance'].unique()
+
+cl_df4[cl_df4['TravelledDistance'].isna()]
+
 #Copiamos el dataframe
 cl_df5 = cl_df4.copy()
 
@@ -265,6 +268,8 @@ for col in cl_df5.columns:
             pass
 
 cl_df5.head()
+
+cl_df5[cl_df5['TravelledDistance'].isna()]
 
 """#### Tratamiento de armas TODO
 
@@ -285,6 +290,13 @@ cl_df6['PrimaryPistol'] = (cl_df6['PrimaryPistol'] > 0).astype(int)
 cl_df6['PrimaryAssaultRifle'].unique()
 
 #cl_df6['PrimaryAssaultRifle'] = cl_df6['PrimaryAssaultRifle'].clip(upper=1)
+
+"""#### Ajustes Finales"""
+
+cl_df7 = cl_df6.copy()
+cl_df7[cl_df7['TravelledDistance'].isna()]
+
+cl_df7 = cl_df7.dropna(subset=['TravelledDistance'])
 
 """### Identificar Outliers TODO"""
 
@@ -317,7 +329,7 @@ plt.show()
 """### Data frame limpio"""
 
 #Se asigna cleandataframe como variable para desarrollo posterior
-cleandataframe = cl_df6.copy()
+cleandataframe = cl_df7.copy()
 
 """### Análisis estadísticos básicos
 
@@ -328,9 +340,9 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Calcular la matriz de correlación
-cl_df7 = cleandataframe.copy()
-cl_df7 = cl_df7.drop(['RoundId', 'InternalTeamId', 'Unnamed: 0', 'MatchId'], axis=1)
-correlations = cl_df7.corr()
+cl_df8 = cleandataframe.copy()
+cl_df8 = cl_df8.drop(['RoundId', 'InternalTeamId', 'Unnamed: 0', 'MatchId'], axis=1)
+correlations = cl_df8.corr()
 
 # Ajustar el tamaño del gráfico
 plt.figure(figsize=(12, 10))
@@ -542,14 +554,15 @@ Hipótesis 1 (Categórica):
 
 La cantidad de equipamiento y recursos iniciales (Valor equipamiento inicio de ronda del equipo = x) influye significativamente en la probabilidad de ganar una ronda (% de ganar ronda = y).
 
-SubHipótesis
-sh1: TravelDistance (mas distacia = ganar)
+Hipótesis
 
-sh2: TeamStartingEquipmentValue (valor total team)
+h1: A mayor distancia recorrida en la ronda, mas probabilidad de ganar, `TravelDistance` (mas distacia = ganar)
 
-sh3: 'TeamStartingEquipmentValue', 'RoundStartingEquipmentValue', 'RoundKills' (todas = ganar)
+h2: Un mayor valor total del equipamiento del equipo perteneciente al jugador en la ronda, influye de manera directa en la probabilidad de ganar `TeamStartingEquipmentValue` (valor total equipo)
 
-comprar los 3 modelos
+h3: al realcionar el valor total del equipamiento del equipo `TeamStartingEquipmentValue` con el sobrevivir a la ronda `Survive`, y la cantidad del bajas realizadas en la ronda `RoundKills` podemos ver una relacion directa en la probabilidad de ganar la ronda
+
+comparar los 3 modelos
 """
 
 # Commented out IPython magic to ensure Python compatibility.
@@ -571,22 +584,284 @@ dfc_rl = cleandataframe.copy()
 
 dfc_rl.head()
 
+dfc_rl['TimeAlive'].dtype
+
 print(dfc_rl.groupby('RoundWinner').size())
 
 dfc_rl.columns.values
 
 dfc_rl1 = dfc_rl.copy()
-dfc_rl1 = dfc_rl1.filter(['RoundWinner', 'TeamStartingEquipmentValue', 'RoundStartingEquipmentValue', 'RoundKills'])
+dfc_rl1 = dfc_rl1.filter(['RoundWinner', 'TravelledDistance', 'TeamStartingEquipmentValue', 'RoundKills', 'Survived'])
 dfc_rl1
 
-sb.pairplot(dfc_rl1, hue='RoundWinner',size=4,vars=['TeamStartingEquipmentValue', 'RoundStartingEquipmentValue', 'RoundKills'],kind='reg')
+dfc_rl2 = dfc_rl1.copy()
+conservar = ['RoundWinner', 'TravelledDistance', 'TeamStartingEquipmentValue', 'RoundKills', 'Survived']
+dfc_rl2 = dfc_rl2[conservar]
+dfc_rl2
 
-"""#### SVM
+dfc_rl2.hist(figsize=(12, 8))
+plt.show()
 
-#### Decision Tree Classifier
+#Interrelacionamos las entradas para ver la concentración lineal las salidas de RoundWinner por colores
+# Azul = Perder (Valor 0) Naranjo = Ganar (Valor 1)
+sb.pairplot(dfc_rl1, hue='RoundWinner',size=4,vars=['RoundWinner', 'TravelledDistance', 'TeamStartingEquipmentValue', 'RoundKills', 'Survived'],kind='reg')
 
-## Fase 5: Evaluation
+"""##### H1: A mayor distancia recorrida en la ronda, mas probabilidad de ganar, TravelDistance (mas distacia = ganar)"""
+
+#Se crea el modelo
+dfc_rl3 = dfc_rl2.copy()
+
+#X = np.array(dfc_rl3.drop(['RoundWinner'],axis=1))
+X = np.array(dfc_rl3['TravelledDistance']).reshape(-1, 1)
+y = np.array(dfc_rl3['RoundWinner'])
+X.shape
+
+dfc_model1 = linear_model.LogisticRegression()
+dfc_model1.fit(X,y)
+
+predictions = dfc_model1.predict(X)
+print(predictions[0:5])
+
+dfc_model1.score(X,y)
+
+"""###### Validación del modelo dfc_rl para h1"""
+
+validation_size = 0.20
+seed = 7
+X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, y, test_size=validation_size, random_state=seed)
+
+"""Los Aciertos fueron de un `49.94%` en la siguiente prueba:"""
+
+name='Logistic Regression'
+kfold = model_selection.KFold(n_splits=10, random_state=seed, shuffle=True)
+cv_results = model_selection.cross_val_score(dfc_model1, X_train, Y_train, cv=kfold, scoring='accuracy')
+msg = "%s: %f (%f)" % (name, cv_results.mean(), cv_results.std())
+print(msg)
+
+predictions = dfc_model1.predict(X_validation)
+print(accuracy_score(Y_validation, predictions))
+
+"""Con esto podemos observar que la accuracy que posee el modelo resultante es muy baja con un `50.13%`, es decir nuestra variable de TravelledDistance no nos da un buen resultado
+
+##### H2: Un mayor valor total del equipamiento del equipo perteneciente al jugador en la ronda, influye de manera directa en la probabilidad de ganar TeamStartingEquipmentValue (valor total equipo)
 """
+
+#Se crea el modelo
+dfc_rl3 = dfc_rl2.copy()
+
+X = np.array(dfc_rl3['TeamStartingEquipmentValue']).reshape(-1, 1)
+y = np.array(dfc_rl3['RoundWinner'])
+X.shape
+
+dfc_model1 = linear_model.LogisticRegression()
+dfc_model1.fit(X,y)
+
+predictions = dfc_model1.predict(X)
+print(predictions[0:5])
+
+dfc_model1.score(X,y)
+
+"""###### Validación del modelo dfc_rl para h2"""
+
+validation_size = 0.20
+seed = 7
+X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, y, test_size=validation_size, random_state=seed)
+
+"""Los Aciertos fueron de un `63.28%` en la siguiente prueba:"""
+
+name='Logistic Regression'
+kfold = model_selection.KFold(n_splits=10, random_state=seed, shuffle=True)
+cv_results = model_selection.cross_val_score(dfc_model1, X_train, Y_train, cv=kfold, scoring='accuracy')
+msg = "%s: %f (%f)" % (name, cv_results.mean(), cv_results.std())
+print(msg)
+
+predictions = dfc_model1.predict(X_validation)
+print(accuracy_score(Y_validation, predictions))
+
+"""Con esto podemos observar que la accuracy que posee el modelo resultante es aun muy baja con un `62.77%` pero mejor al anterior H1, nuestra variable de TeamStartingEquipmentValue no nos da un buen resultado pero si es mejor que TravelledDistance
+
+##### H3: Al relacionar el valor total del equipamiento del equipo TeamStartingEquipmentValue con el sobrevivir a la ronda Survive, y la cantidad del bajas realizadas en la ronda RoundKills podemos ver una relacion directa en la probabilidad de ganar la ronda
+"""
+
+dfc_rl3 = dfc_rl2.copy()
+
+X = np.array(dfc_rl3[['TeamStartingEquipmentValue', 'Survived', 'RoundKills']])
+y = np.array(dfc_rl3['RoundWinner'])
+X.shape
+
+dfc_model1 = linear_model.LogisticRegression()
+dfc_model1.fit(X,y)
+
+predictions = dfc_model1.predict(X)
+print(predictions[0:5])
+
+dfc_model1.score(X,y)
+
+"""###### Validación del modelo dfc_rl para h3"""
+
+validation_size = 0.20
+seed = 7
+X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, y, test_size=validation_size, random_state=seed)
+
+"""Los Aciertos fueron de un `71.79%` en la siguiente prueba:"""
+
+name='Logistic Regression'
+kfold = model_selection.KFold(n_splits=10, random_state=seed, shuffle=True)
+cv_results = model_selection.cross_val_score(dfc_model1, X_train, Y_train, cv=kfold, scoring='accuracy')
+msg = "%s: %f (%f)" % (name, cv_results.mean(), cv_results.std())
+print(msg)
+
+predictions = dfc_model1.predict(X_validation)
+print(accuracy_score(Y_validation, predictions))
+
+"""Con esto podemos observar que la accuracy que posee el modelo es mejor a las anteriores con un `71.79%`, el uso de las 3 variables nos da un resultado con bastante mejoría a los anteriores
+
+#### SVM
+"""
+
+import sklearn.datasets
+import sklearn.svm # Support vector machines
+import sklearn.metrics
+import sklearn.gaussian_process # Kernel de transformación del espacio
+import sklearn.preprocessing
+import matplotlib.pyplot as plt
+import plotly.express as px
+import numpy as np
+import scipy
+
+dfc_svm1 = cleandataframe.copy()
+
+dfc_svm2 = dfc_svm1.copy()
+conservar = ['RoundWinner', 'TravelledDistance', 'TeamStartingEquipmentValue', 'RoundKills', 'Survived']
+dfc_svm2 = dfc_svm2[conservar]
+dfc_svm2
+
+dfc_svm2.head()
+
+from sklearn.model_selection import train_test_split
+from sklearn.svm import SVC
+from sklearn.metrics import classification_report, accuracy_score
+from sklearn.preprocessing import StandardScaler
+
+y = dfc_svm2['RoundWinner']
+
+"""#####H1: A mayor distancia recorrida en la ronda, mas probabilidad de ganar, TravelDistance (mas distacia = ganar)"""
+
+X_h1 = dfc_svm2[['TravelledDistance']]
+
+# Escalado
+scaler = StandardScaler()
+X_h1_scaled = scaler.fit_transform(X_h1)
+
+# Entrenamiento
+X_train, X_test, y_train, y_test = train_test_split(X_h1_scaled, y, test_size=0.2, random_state=42)
+model_h1 = SVC(kernel='linear')
+model_h1.fit(X_train, y_train)
+
+# Evaluación
+y_pred = model_h1.predict(X_test)
+
+print(classification_report(y_test, y_pred))
+
+print("Accuracy:", accuracy_score(y_test, y_pred))
+
+"""##### H2: Un mayor valor total del equipamiento del equipo perteneciente al jugador en la ronda, influye de manera directa en la probabilidad de ganar TeamStartingEquipmentValue (valor total equipo)"""
+
+#VISUALIZAR "LINEA RECTA TRAZABLE"
+sns.scatterplot(data=dfc_svm2,
+                x='TeamStartingEquipmentValue',
+                y='RoundKills',
+                hue='RoundWinner',
+                palette='coolwarm')
+plt.title("Separación entre clases")
+plt.show()
+
+X_h2 = dfc_svm2[['TeamStartingEquipmentValue']]
+X_h2_scaled = scaler.fit_transform(X_h2)
+
+#COMPARACION ENTRE VARIOS MODELOS, NO HAY MUCHA DIFERENCIA
+#BORRAR
+X_train, X_test, y_train, y_test = train_test_split(X_h2_scaled, y, test_size=0.2, random_state=42)
+for k in ['linear', 'rbf', 'poly']:
+    model = SVC(kernel=k)
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+    print(f"Kernel: {k}")
+    print("Accuracy:", accuracy_score(y_test, y_pred))
+
+X_train, X_test, y_train, y_test = train_test_split(X_h2_scaled, y, test_size=0.2, random_state=42)
+
+model_h2 = SVC(kernel='linear')
+model_h2.fit(X_train, y_train)
+
+y_pred = model_h2.predict(X_test)
+
+print(classification_report(y_test, y_pred))
+
+print("Accuracy:", accuracy_score(y_test, y_pred))
+
+"""##### H3: Al relacionar el valor total del equipamiento del equipo TeamStartingEquipmentValue con el sobrevivir a la ronda Survive, y la cantidad del bajas realizadas en la ronda RoundKills podemos ver una relacion directa en la probabilidad de ganar la ronda"""
+
+X_h3 = dfc_svm2[['TeamStartingEquipmentValue', 'Survived', 'RoundKills']]
+X_h3_scaled = scaler.fit_transform(X_h3)
+
+X_train, X_test, y_train, y_test = train_test_split(X_h3_scaled, y, test_size=0.2, random_state=42)
+model_h3 = SVC(kernel='linear')
+model_h3.fit(X_train, y_train)
+
+y_pred = model_h3.predict(X_test)
+
+print(classification_report(y_test, y_pred))
+
+print("Accuracy:", accuracy_score(y_test, y_pred))
+
+"""#### Decision Tree Classifier"""
+
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+import sklearn.tree # Árboles de decisión
+import sklearn.ensemble # Ensambles de modelos
+import sklearn.model_selection
+
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report, accuracy_score
+
+"""#####H1: A mayor distancia recorrida en la ronda, mas probabilidad de ganar, TravelDistance (mas distacia = ganar)"""
+
+X_h1 = dfc_svm2[['TravelledDistance']]
+y = dfc_svm2['RoundWinner']
+
+X_train, X_test, y_train, y_test = train_test_split(X_h1, y, test_size=0.3, random_state=42)
+
+model_h1 = DecisionTreeClassifier(max_depth=3, random_state=42)
+model_h1.fit(X_train, y_train)
+
+y_pred_h1 = model_h1.predict(X_test)
+
+print(classification_report(y_test, y_pred_h1))
+
+print("Accuracy:", accuracy_score(y_test, y_pred_h1))
+
+import matplotlib.pyplot as plt
+from sklearn.tree import plot_tree
+
+plt.figure(figsize=(16, 8))
+plot_tree(model_h1, feature_names=['TravelledDistance'], class_names=['Pierde', 'Gana'], filled=True)
+plt.title("Árbol de Decisión - H1 (Solo TravelledDistance)")
+plt.show()
+
+"""##### H2: Un mayor valor total del equipamiento del equipo perteneciente al jugador en la ronda, influye de manera directa en la probabilidad de ganar TeamStartingEquipmentValue (valor total equipo)"""
+
+
+
+"""##### H3: Al relacionar el valor total del equipamiento del equipo TeamStartingEquipmentValue con el sobrevivir a la ronda Survive, y la cantidad del bajas realizadas en la ronda RoundKills podemos ver una relacion directa en la probabilidad de ganar la ronda"""
+
+
+
+"""## Fase 5: Evaluation"""
 
 # Insertar cuantos bloques de código consideren necesarios
 
