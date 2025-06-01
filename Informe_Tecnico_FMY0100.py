@@ -496,6 +496,8 @@ udf.sample(5)
 
 """Y asi tenemos los datos preparados para comenzar a contrastar.
 
+### Preparación de datos para Y Categórica
+
 ## Fase 4: Modeling
 
 ### Regresión
@@ -506,6 +508,8 @@ udf.sample(5)
 # Realizar tarea de regresión de datos orientado al caso entregado
 
 """### Clasificación
+
+#### Preparación de datos para Y Categórica
 
 Y Categórica:
 
@@ -548,8 +552,6 @@ Clasificacion (dfc_):
   - Decission Tree Classifier:
     - dfc_dtc
 
-#### Regresión Logística
-
 Hipótesis 1 (Categórica):
 
 La cantidad de equipamiento y recursos iniciales (Valor equipamiento inicio de ronda del equipo = x) influye significativamente en la probabilidad de ganar una ronda (% de ganar ronda = y).
@@ -580,15 +582,21 @@ import seaborn as sb
 ##dfc:data frame clasificación / rl:regresión logística
 dfc_rl = cleandataframe.copy()
 
+dfc_svm = cleandataframe.copy()
+
+dfc_dtc = cleandataframe.copy()
+
+"""##### Visualización de la tabla"""
+
 #RoundWinner (0 - perder / 1 - gana)
 
 dfc_rl.head()
 
-dfc_rl['TimeAlive'].dtype
-
 print(dfc_rl.groupby('RoundWinner').size())
 
 dfc_rl.columns.values
+
+"""#### Preparación para regresión lineal"""
 
 dfc_rl1 = dfc_rl.copy()
 dfc_rl1 = dfc_rl1.filter(['RoundWinner', 'TravelledDistance', 'TeamStartingEquipmentValue', 'RoundKills', 'Survived'])
@@ -599,6 +607,30 @@ conservar = ['RoundWinner', 'TravelledDistance', 'TeamStartingEquipmentValue', '
 dfc_rl2 = dfc_rl2[conservar]
 dfc_rl2
 
+"""#### Preparación para Support Vector Machine"""
+
+dfc_svm1 = dfc_svm.copy()
+dfc_svm1 = dfc_svm1.filter(['RoundWinner', 'TravelledDistance', 'TeamStartingEquipmentValue', 'RoundKills', 'Survived'])
+dfc_svm1
+
+dfc_svm2 = dfc_svm1.copy()
+conservar = ['RoundWinner', 'TravelledDistance', 'TeamStartingEquipmentValue', 'RoundKills', 'Survived']
+dfc_svm2 = dfc_svm2[conservar]
+dfc_svm2
+
+"""#### Preparación para Decision Tree Classifier"""
+
+dfc_dtc1 = dfc_dtc.copy()
+dfc_dtc1 = dfc_dtc1.filter(['RoundWinner', 'TravelledDistance', 'TeamStartingEquipmentValue', 'RoundKills', 'Survived'])
+dfc_dtc1
+
+dfc_dtc2 = dfc_dtc1.copy()
+conservar = ['RoundWinner', 'TravelledDistance', 'TeamStartingEquipmentValue', 'RoundKills', 'Survived']
+dfc_dtc2 = dfc_dtc2[conservar]
+dfc_dtc2
+
+"""#### Visualización Gráfica de X elegidas"""
+
 dfc_rl2.hist(figsize=(12, 8))
 plt.show()
 
@@ -606,7 +638,10 @@ plt.show()
 # Azul = Perder (Valor 0) Naranjo = Ganar (Valor 1)
 sb.pairplot(dfc_rl1, hue='RoundWinner',size=4,vars=['RoundWinner', 'TravelledDistance', 'TeamStartingEquipmentValue', 'RoundKills', 'Survived'],kind='reg')
 
-"""##### H1: A mayor distancia recorrida en la ronda, mas probabilidad de ganar, TravelDistance (mas distacia = ganar)"""
+"""#### Regresión Logística
+
+##### H1: A mayor distancia recorrida en la ronda, mas probabilidad de ganar, TravelDistance (mas distacia = ganar)
+"""
 
 #Se crea el modelo
 dfc_rl3 = dfc_rl2.copy()
@@ -749,6 +784,24 @@ y = dfc_svm2['RoundWinner']
 
 X_h1 = dfc_svm2[['TravelledDistance']]
 
+"""Podemos observar que no existe una linea trazable clara"""
+
+X_h1 = dfc_svm2[['TravelledDistance']]
+y = dfc_svm2['RoundWinner']
+
+# Para graficar necesitamos una segunda dimensión artificial (como zeros)
+X_train, X_test, y_train, y_test = train_test_split(X_h1, y, test_size=0.3, random_state=42)
+
+plt.figure(figsize=(8, 5))
+plt.scatter(X_train['TravelledDistance'], [0]*len(X_train), c=y_train, cmap='coolwarm', label='Train', alpha=0.6)
+plt.scatter(X_test['TravelledDistance'], [0]*len(X_test), c=y_test, cmap='coolwarm', marker='x', label='Test', alpha=0.8)
+plt.xlabel('TravelledDistance')
+plt.yticks([])  # Quitamos escala Y porque es artificial
+plt.title('H1: TravelledDistance vs RoundWinner')
+plt.legend()
+plt.grid(True)
+plt.show()
+
 # Escalado
 scaler = StandardScaler()
 X_h1_scaled = scaler.fit_transform(X_h1)
@@ -767,20 +820,31 @@ print("Accuracy:", accuracy_score(y_test, y_pred))
 
 """##### H2: Un mayor valor total del equipamiento del equipo perteneciente al jugador en la ronda, influye de manera directa en la probabilidad de ganar TeamStartingEquipmentValue (valor total equipo)"""
 
-#VISUALIZAR "LINEA RECTA TRAZABLE"
-sns.scatterplot(data=dfc_svm2,
-                x='TeamStartingEquipmentValue',
-                y='RoundKills',
-                hue='RoundWinner',
-                palette='coolwarm')
-plt.title("Separación entre clases")
+X_h2 = dfc_svm2[['TeamStartingEquipmentValue']]
+
+"""Podemos observar que no existe una linea trazable clara"""
+
+X_h2 = dfc_svm2[['TeamStartingEquipmentValue']]
+y = dfc_svm2['RoundWinner']
+
+X_train, X_test, y_train, y_test = train_test_split(X_h2, y, test_size=0.3, random_state=42)
+
+plt.figure(figsize=(8, 5))
+plt.scatter(X_train['TeamStartingEquipmentValue'], [0]*len(X_train), c=y_train, cmap='coolwarm', label='Train', alpha=0.6)
+plt.scatter(X_test['TeamStartingEquipmentValue'], [0]*len(X_test), c=y_test, cmap='coolwarm', marker='x', label='Test', alpha=0.8)
+plt.xlabel('TeamStartingEquipmentValue')
+plt.yticks([])
+plt.title('H2: TeamStartingEquipmentValue vs RoundWinner')
+plt.legend()
+plt.grid(True)
 plt.show()
 
 X_h2 = dfc_svm2[['TeamStartingEquipmentValue']]
 X_h2_scaled = scaler.fit_transform(X_h2)
 
-#COMPARACION ENTRE VARIOS MODELOS, NO HAY MUCHA DIFERENCIA
-#BORRAR
+"""Podemos observar que no existe mucha mejora entre los tres modelos de SVM"""
+
+#COMPARACION ENTRE VARIOS MODELOS
 X_train, X_test, y_train, y_test = train_test_split(X_h2_scaled, y, test_size=0.2, random_state=42)
 for k in ['linear', 'rbf', 'poly']:
     model = SVC(kernel=k)
@@ -801,6 +865,56 @@ print(classification_report(y_test, y_pred))
 print("Accuracy:", accuracy_score(y_test, y_pred))
 
 """##### H3: Al relacionar el valor total del equipamiento del equipo TeamStartingEquipmentValue con el sobrevivir a la ronda Survive, y la cantidad del bajas realizadas en la ronda RoundKills podemos ver una relacion directa en la probabilidad de ganar la ronda"""
+
+X_h3 = dfc_svm2[['TeamStartingEquipmentValue', 'RoundKills', 'Survived']]
+
+"""Podemos observar que los datos se encuentran sobrepuestos y se dificulta trazar el hiperplano"""
+
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from sklearn.model_selection import train_test_split
+
+# Variables predictoras y objetivo
+X_h3 = dfc_svm2[['TeamStartingEquipmentValue', 'RoundKills', 'Survived']]
+y = dfc_svm2['RoundWinner']
+
+# Dividir en entrenamiento y prueba
+X_train, X_test, y_train, y_test = train_test_split(X_h3, y, test_size=0.3, random_state=42)
+
+# Crear gráfico 3D
+fig = plt.figure(figsize=(15, 12))
+ax = fig.add_subplot(111, projection='3d')
+
+# Graficar puntos de entrenamiento
+ax.scatter(
+    X_train['TeamStartingEquipmentValue'],
+    X_train['RoundKills'],
+    X_train['Survived'],
+    c=y_train,
+    cmap='coolwarm',
+    alpha=0.6,
+    label='Train'
+)
+
+# Graficar puntos de prueba
+ax.scatter(
+    X_test['TeamStartingEquipmentValue'],
+    X_test['RoundKills'],
+    X_test['Survived'],
+    c=y_test,
+    cmap='coolwarm',
+    marker='x',
+    alpha=0.8,
+    label='Test'
+)
+
+# Etiquetas
+ax.set_xlabel('TeamStartingEquipmentValue')
+ax.set_ylabel('RoundKills')
+ax.set_zlabel('Survived')
+plt.title('H3: Visualización 3D de predictores vs RoundWinner')
+plt.legend()
+plt.show()
 
 X_h3 = dfc_svm2[['TeamStartingEquipmentValue', 'Survived', 'RoundKills']]
 X_h3_scaled = scaler.fit_transform(X_h3)
@@ -829,37 +943,60 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, accuracy_score
 
+from sklearn.tree import DecisionTreeClassifier, plot_tree
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.metrics import classification_report
+import matplotlib.pyplot as plt
+
+def entrenar_y_graficar_arbol(X, y, nombre_modelo):
+    # Separar en train/test
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+    # Definir grid de hiperparámetros
+    param_grid = {
+        'max_depth': [3, 5, 10, None],
+        'min_samples_split': [2, 5, 10],
+        'min_samples_leaf': [1, 2, 4],
+        'criterion': ['gini', 'entropy']
+    }
+
+    # Inicializar y buscar mejor modelo
+    dtc = DecisionTreeClassifier(random_state=42)
+    grid_search = GridSearchCV(dtc, param_grid, cv=5, scoring='accuracy', n_jobs=-1)
+    grid_search.fit(X_train, y_train)
+
+    best_model = grid_search.best_estimator_
+    print(f"\n🌲 Árbol óptimo para {nombre_modelo}")
+    print("Mejores hiperparámetros:", grid_search.best_params_)
+
+    # Evaluación
+    y_pred = best_model.predict(X_test)
+    print("\n📊 Reporte de clasificación:")
+    print(classification_report(y_test, y_pred))
+
+    # Graficar árbol
+    plt.figure(figsize=(20, 10))
+    plot_tree(best_model, feature_names=X.columns, class_names=['Pierde', 'Gana'], filled=True)
+    plt.title(f"Árbol de decisión - {nombre_modelo}")
+    plt.show()
+
+    return best_model
+
 """#####H1: A mayor distancia recorrida en la ronda, mas probabilidad de ganar, TravelDistance (mas distacia = ganar)"""
 
-X_h1 = dfc_svm2[['TravelledDistance']]
-y = dfc_svm2['RoundWinner']
-
-X_train, X_test, y_train, y_test = train_test_split(X_h1, y, test_size=0.3, random_state=42)
-
-model_h1 = DecisionTreeClassifier(max_depth=3, random_state=42)
-model_h1.fit(X_train, y_train)
-
-y_pred_h1 = model_h1.predict(X_test)
-
-print(classification_report(y_test, y_pred_h1))
-
-print("Accuracy:", accuracy_score(y_test, y_pred_h1))
-
-import matplotlib.pyplot as plt
-from sklearn.tree import plot_tree
-
-plt.figure(figsize=(16, 8))
-plot_tree(model_h1, feature_names=['TravelledDistance'], class_names=['Pierde', 'Gana'], filled=True)
-plt.title("Árbol de Decisión - H1 (Solo TravelledDistance)")
-plt.show()
+X_h1 = dfc_dtc2[['TravelledDistance']]
+y = dfc_dtc2['RoundWinner']
+modelo_h1 = entrenar_y_graficar_arbol(X_h1, y, "H1 - TravelledDistance")
 
 """##### H2: Un mayor valor total del equipamiento del equipo perteneciente al jugador en la ronda, influye de manera directa en la probabilidad de ganar TeamStartingEquipmentValue (valor total equipo)"""
 
-
+X_h2 = dfc_dtc2[['TeamStartingEquipmentValue']]
+modelo_h2 = entrenar_y_graficar_arbol(X_h2, y, "H2 - TeamStartingEquipmentValue")
 
 """##### H3: Al relacionar el valor total del equipamiento del equipo TeamStartingEquipmentValue con el sobrevivir a la ronda Survive, y la cantidad del bajas realizadas en la ronda RoundKills podemos ver una relacion directa en la probabilidad de ganar la ronda"""
 
-
+X_h3 = dfc_dtc2[['TeamStartingEquipmentValue', 'RoundKills', 'Survived']]
+modelo_h3 = entrenar_y_graficar_arbol(X_h3, y, "H3 - Multi Feature")
 
 """## Fase 5: Evaluation"""
 
