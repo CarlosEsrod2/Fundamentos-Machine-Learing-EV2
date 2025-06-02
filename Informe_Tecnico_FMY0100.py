@@ -478,38 +478,11 @@ Sub-hipótesis 1:
 
 
 
-"""## Fase 3: Data Preparation"""
+"""## Fase 3: Data Preparation
 
-# En primera instancia, hacemos una copia de uso del dataframe
-udf = cl_df5.copy()
-
-"""#### Preparación de datos hipótesis 3
-
-Por principio, nos será útil sumar los asesinatos y las asistencias de un jugador en una ronda dentro de una sola variable que podemos añadir a la tabla de datos
-"""
-
-#Generamos la columna
-udf['RoundParticipation'] = udf['RoundKills'] + udf['RoundAssists']
-
-#Comprobamos que se creara correctamente
-udf.sample(5)
-
-"""Y asi tenemos los datos preparados para comenzar a contrastar.
+### Preparación de datos para Regresión
 
 ### Preparación de datos para Y Categórica
-
-## Fase 4: Modeling
-
-### Regresión
-"""
-
-# Insertar cuantos bloques de código consideren necesarios
-
-# Realizar tarea de regresión de datos orientado al caso entregado
-
-"""### Clasificación
-
-#### Preparación de datos para Y Categórica
 
 Y Categórica:
 
@@ -596,6 +569,10 @@ print(dfc_rl.groupby('RoundWinner').size())
 
 dfc_rl.columns.values
 
+# Insertar cuantos bloques de código consideren necesarios
+
+# Realizar tarea de regresión de datos orientado al caso entregado
+
 """#### Preparación para regresión lineal"""
 
 dfc_rl1 = dfc_rl.copy()
@@ -629,7 +606,16 @@ conservar = ['RoundWinner', 'TravelledDistance', 'TeamStartingEquipmentValue', '
 dfc_dtc2 = dfc_dtc2[conservar]
 dfc_dtc2
 
-"""#### Visualización Gráfica de X elegidas"""
+"""### Preparación de datos para Clustering
+
+## Fase 4: Modeling
+
+### Regresión
+
+### Clasificación
+
+#### Visualización Gráfica de X elegidas
+"""
 
 dfc_rl2.hist(figsize=(12, 8))
 plt.show()
@@ -643,116 +629,56 @@ sb.pairplot(dfc_rl1, hue='RoundWinner',size=4,vars=['RoundWinner', 'TravelledDis
 ##### H1: A mayor distancia recorrida en la ronda, mas probabilidad de ganar, TravelDistance (mas distacia = ganar)
 """
 
-#Se crea el modelo
 dfc_rl3 = dfc_rl2.copy()
 
 #X = np.array(dfc_rl3.drop(['RoundWinner'],axis=1))
-X = np.array(dfc_rl3['TravelledDistance']).reshape(-1, 1)
-y = np.array(dfc_rl3['RoundWinner'])
-X.shape
+X_dfc_rl_h1 = np.array(dfc_rl3['TravelledDistance']).reshape(-1, 1)
+y_dfc_rl_h1 = np.array(dfc_rl3['RoundWinner'])
+X_dfc_rl_h1.shape
 
-dfc_model1 = linear_model.LogisticRegression()
-dfc_model1.fit(X,y)
+#Se crea el modelo
+dfc_model_rl1 = linear_model.LogisticRegression()
+dfc_model_rl1.fit(X_dfc_rl_h1,y_dfc_rl_h1)
 
-predictions = dfc_model1.predict(X)
-print(predictions[0:5])
+predictions_dfc_rl1 = dfc_model_rl1.predict(X_dfc_rl_h1)
+print(predictions_dfc_rl1[0:5])
 
-dfc_model1.score(X,y)
+dfc_model_rl1.score(X_dfc_rl_h1,y_dfc_rl_h1)
 
-"""###### Validación del modelo dfc_rl para h1"""
-
-validation_size = 0.20
-seed = 7
-X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, y, test_size=validation_size, random_state=seed)
-
-"""Los Aciertos fueron de un `49.94%` en la siguiente prueba:"""
-
-name='Logistic Regression'
-kfold = model_selection.KFold(n_splits=10, random_state=seed, shuffle=True)
-cv_results = model_selection.cross_val_score(dfc_model1, X_train, Y_train, cv=kfold, scoring='accuracy')
-msg = "%s: %f (%f)" % (name, cv_results.mean(), cv_results.std())
-print(msg)
-
-predictions = dfc_model1.predict(X_validation)
-print(accuracy_score(Y_validation, predictions))
-
-"""Con esto podemos observar que la accuracy que posee el modelo resultante es muy baja con un `50.13%`, es decir nuestra variable de TravelledDistance no nos da un buen resultado
-
-##### H2: Un mayor valor total del equipamiento del equipo perteneciente al jugador en la ronda, influye de manera directa en la probabilidad de ganar TeamStartingEquipmentValue (valor total equipo)
-"""
+"""##### H2: Un mayor valor total del equipamiento del equipo perteneciente al jugador en la ronda, influye de manera directa en la probabilidad de ganar TeamStartingEquipmentValue (valor total equipo)"""
 
 #Se crea el modelo
 dfc_rl3 = dfc_rl2.copy()
 
-X = np.array(dfc_rl3['TeamStartingEquipmentValue']).reshape(-1, 1)
-y = np.array(dfc_rl3['RoundWinner'])
-X.shape
+X_dfc_rl_h2 = np.array(dfc_rl3['TeamStartingEquipmentValue']).reshape(-1, 1)
+y_dfc_rl_h2 = np.array(dfc_rl3['RoundWinner'])
+X_dfc_rl_h2.shape
 
-dfc_model1 = linear_model.LogisticRegression()
-dfc_model1.fit(X,y)
+dfc_model_rl2 = linear_model.LogisticRegression()
+dfc_model_rl2.fit(X_dfc_rl_h2, y_dfc_rl_h2)
 
-predictions = dfc_model1.predict(X)
-print(predictions[0:5])
+predictions_dfc_rl2 = dfc_model_rl2.predict(X_dfc_rl_h2)
+print(predictions_dfc_rl2[0:5])
 
-dfc_model1.score(X,y)
+dfc_model_rl2.score(X_dfc_rl_h2, y_dfc_rl_h2)
 
-"""###### Validación del modelo dfc_rl para h2"""
-
-validation_size = 0.20
-seed = 7
-X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, y, test_size=validation_size, random_state=seed)
-
-"""Los Aciertos fueron de un `63.28%` en la siguiente prueba:"""
-
-name='Logistic Regression'
-kfold = model_selection.KFold(n_splits=10, random_state=seed, shuffle=True)
-cv_results = model_selection.cross_val_score(dfc_model1, X_train, Y_train, cv=kfold, scoring='accuracy')
-msg = "%s: %f (%f)" % (name, cv_results.mean(), cv_results.std())
-print(msg)
-
-predictions = dfc_model1.predict(X_validation)
-print(accuracy_score(Y_validation, predictions))
-
-"""Con esto podemos observar que la accuracy que posee el modelo resultante es aun muy baja con un `62.77%` pero mejor al anterior H1, nuestra variable de TeamStartingEquipmentValue no nos da un buen resultado pero si es mejor que TravelledDistance
-
-##### H3: Al relacionar el valor total del equipamiento del equipo TeamStartingEquipmentValue con el sobrevivir a la ronda Survive, y la cantidad del bajas realizadas en la ronda RoundKills podemos ver una relacion directa en la probabilidad de ganar la ronda
-"""
+"""##### H3: Al relacionar el valor total del equipamiento del equipo TeamStartingEquipmentValue con el sobrevivir a la ronda Survive, y la cantidad del bajas realizadas en la ronda RoundKills podemos ver una relacion directa en la probabilidad de ganar la ronda"""
 
 dfc_rl3 = dfc_rl2.copy()
 
-X = np.array(dfc_rl3[['TeamStartingEquipmentValue', 'Survived', 'RoundKills']])
-y = np.array(dfc_rl3['RoundWinner'])
-X.shape
+X_dfc_rl_h3 = np.array(dfc_rl3[['TeamStartingEquipmentValue', 'Survived', 'RoundKills']])
+y_dfc_rl_h3 = np.array(dfc_rl3['RoundWinner'])
+X_dfc_rl_h3.shape
 
-dfc_model1 = linear_model.LogisticRegression()
-dfc_model1.fit(X,y)
+dfc_model_rl3 = linear_model.LogisticRegression()
+dfc_model_rl3.fit(X_dfc_rl_h3, y_dfc_rl_h3)
 
-predictions = dfc_model1.predict(X)
-print(predictions[0:5])
+predictions_dfc_rl3 = dfc_model_rl3.predict(X_dfc_rl_h3)
+print(predictions_dfc_rl3[0:5])
 
-dfc_model1.score(X,y)
+dfc_model_rl3.score(X_dfc_rl_h3, y_dfc_rl_h3)
 
-"""###### Validación del modelo dfc_rl para h3"""
-
-validation_size = 0.20
-seed = 7
-X_train, X_validation, Y_train, Y_validation = model_selection.train_test_split(X, y, test_size=validation_size, random_state=seed)
-
-"""Los Aciertos fueron de un `71.79%` en la siguiente prueba:"""
-
-name='Logistic Regression'
-kfold = model_selection.KFold(n_splits=10, random_state=seed, shuffle=True)
-cv_results = model_selection.cross_val_score(dfc_model1, X_train, Y_train, cv=kfold, scoring='accuracy')
-msg = "%s: %f (%f)" % (name, cv_results.mean(), cv_results.std())
-print(msg)
-
-predictions = dfc_model1.predict(X_validation)
-print(accuracy_score(Y_validation, predictions))
-
-"""Con esto podemos observar que la accuracy que posee el modelo es mejor a las anteriores con un `71.79%`, el uso de las 3 variables nos da un resultado con bastante mejoría a los anteriores
-
-#### SVM
-"""
+"""#### SVM"""
 
 import sklearn.datasets
 import sklearn.svm # Support vector machines
@@ -783,22 +709,19 @@ y = dfc_svm2['RoundWinner']
 """#####H1: A mayor distancia recorrida en la ronda, mas probabilidad de ganar, TravelDistance (mas distacia = ganar)"""
 
 X_h1 = dfc_svm2[['TravelledDistance']]
+y = dfc_svm2['RoundWinner']
 
 """Podemos observar que no existe una linea trazable clara"""
 
-X_h1 = dfc_svm2[['TravelledDistance']]
-y = dfc_svm2['RoundWinner']
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+import seaborn as sns
 
-# Para graficar necesitamos una segunda dimensión artificial (como zeros)
-X_train, X_test, y_train, y_test = train_test_split(X_h1, y, test_size=0.3, random_state=42)
-
-plt.figure(figsize=(8, 5))
-plt.scatter(X_train['TravelledDistance'], [0]*len(X_train), c=y_train, cmap='coolwarm', label='Train', alpha=0.6)
-plt.scatter(X_test['TravelledDistance'], [0]*len(X_test), c=y_test, cmap='coolwarm', marker='x', label='Test', alpha=0.8)
-plt.xlabel('TravelledDistance')
-plt.yticks([])  # Quitamos escala Y porque es artificial
-plt.title('H1: TravelledDistance vs RoundWinner')
-plt.legend()
+plt.figure(figsize=(8, 4))
+sns.stripplot(data=dfc_svm2, x='RoundWinner', y='TravelledDistance', jitter=0.25, palette='Set1')
+plt.title("H1 - TravelledDistance vs RoundWinner")
+plt.xlabel("RoundWinner (0=Pierde, 1=Gana)")
+plt.ylabel("TravelledDistance")
 plt.grid(True)
 plt.show()
 
@@ -807,127 +730,89 @@ scaler = StandardScaler()
 X_h1_scaled = scaler.fit_transform(X_h1)
 
 # Entrenamiento
-X_train, X_test, y_train, y_test = train_test_split(X_h1_scaled, y, test_size=0.2, random_state=42)
-model_h1 = SVC(kernel='linear')
-model_h1.fit(X_train, y_train)
-
-# Evaluación
-y_pred = model_h1.predict(X_test)
-
-print(classification_report(y_test, y_pred))
-
-print("Accuracy:", accuracy_score(y_test, y_pred))
+X_train_svm1, X_test_svm1, y_train_svm1, y_test_svm1 = train_test_split(X_h1_scaled, y, test_size=0.2, random_state=42)
+dfc_model_svc1 = SVC(kernel='linear')
+dfc_model_svc1.fit(X_train_svm1, y_train_svm1)
 
 """##### H2: Un mayor valor total del equipamiento del equipo perteneciente al jugador en la ronda, influye de manera directa en la probabilidad de ganar TeamStartingEquipmentValue (valor total equipo)"""
 
 X_h2 = dfc_svm2[['TeamStartingEquipmentValue']]
+y = dfc_svm2['RoundWinner']
 
 """Podemos observar que no existe una linea trazable clara"""
 
-X_h2 = dfc_svm2[['TeamStartingEquipmentValue']]
-y = dfc_svm2['RoundWinner']
-
-X_train, X_test, y_train, y_test = train_test_split(X_h2, y, test_size=0.3, random_state=42)
-
-plt.figure(figsize=(8, 5))
-plt.scatter(X_train['TeamStartingEquipmentValue'], [0]*len(X_train), c=y_train, cmap='coolwarm', label='Train', alpha=0.6)
-plt.scatter(X_test['TeamStartingEquipmentValue'], [0]*len(X_test), c=y_test, cmap='coolwarm', marker='x', label='Test', alpha=0.8)
-plt.xlabel('TeamStartingEquipmentValue')
-plt.yticks([])
-plt.title('H2: TeamStartingEquipmentValue vs RoundWinner')
-plt.legend()
+plt.figure(figsize=(8, 4))
+sns.stripplot(data=dfc_svm2, x='RoundWinner', y='TeamStartingEquipmentValue', jitter=0.25, palette='Set2')
+plt.title("H2 - TeamStartingEquipmentValue vs RoundWinner")
+plt.xlabel("RoundWinner (0=Pierde, 1=Gana)")
+plt.ylabel("TeamStartingEquipmentValue")
 plt.grid(True)
 plt.show()
 
 X_h2 = dfc_svm2[['TeamStartingEquipmentValue']]
 X_h2_scaled = scaler.fit_transform(X_h2)
+y = dfc_svm2['RoundWinner']
 
 """Podemos observar que no existe mucha mejora entre los tres modelos de SVM"""
 
 #COMPARACION ENTRE VARIOS MODELOS
-X_train, X_test, y_train, y_test = train_test_split(X_h2_scaled, y, test_size=0.2, random_state=42)
+X_train_svm2, X_test_svm2, y_train_svm2, y_test_svm2 = train_test_split(X_h2_scaled, y, test_size=0.2, random_state=42)
 for k in ['linear', 'rbf', 'poly']:
     model = SVC(kernel=k)
-    model.fit(X_train, y_train)
-    y_pred = model.predict(X_test)
+    model.fit(X_train_svm2, y_train_svm2)
+    y_pred = model.predict(X_test_svm2)
     print(f"Kernel: {k}")
-    print("Accuracy:", accuracy_score(y_test, y_pred))
+    print("Accuracy:", accuracy_score(y_test_svm2, y_pred))
 
-X_train, X_test, y_train, y_test = train_test_split(X_h2_scaled, y, test_size=0.2, random_state=42)
+X_train_svm2, X_test_svm2, y_train_svm2, y_test_svm2 = train_test_split(X_h2_scaled, y, test_size=0.2, random_state=42)
 
-model_h2 = SVC(kernel='linear')
-model_h2.fit(X_train, y_train)
-
-y_pred = model_h2.predict(X_test)
-
-print(classification_report(y_test, y_pred))
-
-print("Accuracy:", accuracy_score(y_test, y_pred))
+dfc_model_svc2 = SVC(kernel='linear')
+dfc_model_svc2.fit(X_train_svm2, y_train_svm2)
 
 """##### H3: Al relacionar el valor total del equipamiento del equipo TeamStartingEquipmentValue con el sobrevivir a la ronda Survive, y la cantidad del bajas realizadas en la ronda RoundKills podemos ver una relacion directa en la probabilidad de ganar la ronda"""
 
 X_h3 = dfc_svm2[['TeamStartingEquipmentValue', 'RoundKills', 'Survived']]
+y = dfc_svm2['RoundWinner']
 
 """Podemos observar que los datos se encuentran sobrepuestos y se dificulta trazar el hiperplano"""
 
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from sklearn.model_selection import train_test_split
+import seaborn as sns
 
-# Variables predictoras y objetivo
-X_h3 = dfc_svm2[['TeamStartingEquipmentValue', 'RoundKills', 'Survived']]
-y = dfc_svm2['RoundWinner']
-
-# Dividir en entrenamiento y prueba
-X_train, X_test, y_train, y_test = train_test_split(X_h3, y, test_size=0.3, random_state=42)
-
-# Crear gráfico 3D
-fig = plt.figure(figsize=(15, 12))
+fig = plt.figure(figsize=(10, 6))
 ax = fig.add_subplot(111, projection='3d')
 
-# Graficar puntos de entrenamiento
-ax.scatter(
-    X_train['TeamStartingEquipmentValue'],
-    X_train['RoundKills'],
-    X_train['Survived'],
-    c=y_train,
-    cmap='coolwarm',
-    alpha=0.6,
-    label='Train'
-)
+# Extraer datos
+x = dfc_svm2['TeamStartingEquipmentValue']
+y = dfc_svm2['RoundKills']
+z = dfc_svm2['Survived']
+c = dfc_svm2['RoundWinner']
 
-# Graficar puntos de prueba
-ax.scatter(
-    X_test['TeamStartingEquipmentValue'],
-    X_test['RoundKills'],
-    X_test['Survived'],
-    c=y_test,
-    cmap='coolwarm',
-    marker='x',
-    alpha=0.8,
-    label='Test'
-)
+scatter = ax.scatter(x, y, z, c=c, cmap='coolwarm', alpha=0.6)
 
-# Etiquetas
-ax.set_xlabel('TeamStartingEquipmentValue')
-ax.set_ylabel('RoundKills')
-ax.set_zlabel('Survived')
-plt.title('H3: Visualización 3D de predictores vs RoundWinner')
-plt.legend()
+ax.set_xlabel("TeamStartingEquipmentValue")
+ax.set_ylabel("RoundKills")
+ax.set_zlabel("Survived")
+ax.set_title("H3 - Visualización 3D (color: RoundWinner)")
+plt.colorbar(scatter, label='RoundWinner')
 plt.show()
 
 X_h3 = dfc_svm2[['TeamStartingEquipmentValue', 'Survived', 'RoundKills']]
 X_h3_scaled = scaler.fit_transform(X_h3)
+y = dfc_svm2['RoundWinner']
 
-X_train, X_test, y_train, y_test = train_test_split(X_h3_scaled, y, test_size=0.2, random_state=42)
-model_h3 = SVC(kernel='linear')
-model_h3.fit(X_train, y_train)
+X_train_svm3, X_test_svm3, y_train_svm3, y_test_svm3 = train_test_split(X_h3_scaled, y, test_size=0.2, random_state=42)
+for k in ['linear', 'rbf', 'poly']:
+    model_svc3 = SVC(kernel=k)
+    model_svc3.fit(X_train_svm3, y_train_svm3)
+    y_pred = model_svc3.predict(X_test_svm3)
+    print(f"Kernel: {k}")
+    print("Accuracy:", accuracy_score(y_test_svm3, y_pred))
 
-y_pred = model_h3.predict(X_test)
-
-print(classification_report(y_test, y_pred))
-
-print("Accuracy:", accuracy_score(y_test, y_pred))
+X_train_svm3, X_test_svm3, y_train_svm3, y_test_svm3 = train_test_split(X_h3_scaled, y, test_size=0.2, random_state=42)
+dfc_model_svc3 = SVC(kernel='rbf')
+dfc_model_svc3.fit(X_train_svm3, y_train_svm3)
 
 """#### Decision Tree Classifier"""
 
@@ -966,12 +851,13 @@ def entrenar_y_graficar_arbol(X, y, nombre_modelo):
     grid_search.fit(X_train, y_train)
 
     best_model = grid_search.best_estimator_
-    print(f"\n🌲 Árbol óptimo para {nombre_modelo}")
+    print(f"\nÁrbol óptimo para {nombre_modelo}")
     print("Mejores hiperparámetros:", grid_search.best_params_)
 
+    """
     # Evaluación
     y_pred = best_model.predict(X_test)
-    print("\n📊 Reporte de clasificación:")
+    print("\nReporte de clasificación:")
     print(classification_report(y_test, y_pred))
 
     # Graficar árbol
@@ -979,6 +865,7 @@ def entrenar_y_graficar_arbol(X, y, nombre_modelo):
     plot_tree(best_model, feature_names=X.columns, class_names=['Pierde', 'Gana'], filled=True)
     plt.title(f"Árbol de decisión - {nombre_modelo}")
     plt.show()
+    """
 
     return best_model
 
@@ -986,17 +873,19 @@ def entrenar_y_graficar_arbol(X, y, nombre_modelo):
 
 X_h1 = dfc_dtc2[['TravelledDistance']]
 y = dfc_dtc2['RoundWinner']
-modelo_h1 = entrenar_y_graficar_arbol(X_h1, y, "H1 - TravelledDistance")
+dfc_model_dtc1 = entrenar_y_graficar_arbol(X_h1, y, "H1 - TravelledDistance")
 
 """##### H2: Un mayor valor total del equipamiento del equipo perteneciente al jugador en la ronda, influye de manera directa en la probabilidad de ganar TeamStartingEquipmentValue (valor total equipo)"""
 
 X_h2 = dfc_dtc2[['TeamStartingEquipmentValue']]
-modelo_h2 = entrenar_y_graficar_arbol(X_h2, y, "H2 - TeamStartingEquipmentValue")
+y = dfc_dtc2['RoundWinner']
+dfc_model_dtc2 = entrenar_y_graficar_arbol(X_h2, y, "H2 - TeamStartingEquipmentValue")
 
 """##### H3: Al relacionar el valor total del equipamiento del equipo TeamStartingEquipmentValue con el sobrevivir a la ronda Survive, y la cantidad del bajas realizadas en la ronda RoundKills podemos ver una relacion directa en la probabilidad de ganar la ronda"""
 
 X_h3 = dfc_dtc2[['TeamStartingEquipmentValue', 'RoundKills', 'Survived']]
-modelo_h3 = entrenar_y_graficar_arbol(X_h3, y, "H3 - Multi Feature")
+y = dfc_dtc2['RoundWinner']
+dfc_model_dtc3 = entrenar_y_graficar_arbol(X_h3, y, "H3 - Multi Feature")
 
 """## Fase 5: Evaluation"""
 
@@ -1004,8 +893,152 @@ modelo_h3 = entrenar_y_graficar_arbol(X_h3, y, "H3 - Multi Feature")
 
 # Evaluar con las métricas que corresponda los mejores modelos, explicar cual es mejor para cada tarea y por qué
 
+"""### Validación Regresión Logística
+
+#### Regresión logística
+
+##### Validación del modelo dfc_rl para h1
+"""
+
+validation_size = 0.20
+seed = 7
+X_train_rl1, X_validation_rl1, Y_train_rl1, Y_validation_rl1 = model_selection.train_test_split(X_dfc_rl_h1, y_dfc_rl_h1, test_size=validation_size, random_state=seed)
+
+"""Los Aciertos fueron de un `49.94%` en la siguiente prueba:"""
+
+name='Logistic Regression'
+kfold = model_selection.KFold(n_splits=10, random_state=seed, shuffle=True)
+cv_results = model_selection.cross_val_score(dfc_model_rl1, X_train_rl1, Y_train_rl1, cv=kfold, scoring='accuracy')
+msg = "%s: %f (%f)" % (name, cv_results.mean(), cv_results.std())
+print(msg)
+
+predictions_dfc_rl1 = dfc_model_rl1.predict(X_validation_rl1)
+print(accuracy_score(Y_validation_rl1, predictions_dfc_rl1))
+
+"""Con esto podemos observar que la accuracy que posee el modelo resultante es muy baja con un `50.13%`, es decir nuestra variable de TravelledDistance no nos da un buen resultado
+
+##### Validación del modelo dfc_rl para h2
+"""
+
+validation_size = 0.20
+seed = 7
+X_train_rl2, X_validation_rl2, Y_train_rl2, Y_validation_rl2 = model_selection.train_test_split(X_dfc_rl_h2, y_dfc_rl_h2, test_size=validation_size, random_state=seed)
+
+"""Los Aciertos fueron de un `63.28%` en la siguiente prueba:"""
+
+name='Logistic Regression'
+kfold = model_selection.KFold(n_splits=10, random_state=seed, shuffle=True)
+cv_results = model_selection.cross_val_score(dfc_model_rl2, X_train_rl2, Y_train_rl2, cv=kfold, scoring='accuracy')
+msg = "%s: %f (%f)" % (name, cv_results.mean(), cv_results.std())
+print(msg)
+
+predictions_dfc_rl2 = dfc_model_rl2.predict(X_validation_rl2)
+print(accuracy_score(Y_validation_rl2, predictions_dfc_rl2))
+
+"""Con esto podemos observar que la accuracy que posee el modelo resultante es aun muy baja con un `62.77%` pero mejor al anterior H1, nuestra variable de TeamStartingEquipmentValue no nos da un buen resultado pero si es mejor que TravelledDistance
+
+##### Validación del modelo dfc_rl para h3
+"""
+
+validation_size = 0.20
+seed = 7
+X_train_rl3, X_validation_rl3, Y_train_rl3, Y_validation_rl3 = model_selection.train_test_split(X_dfc_rl_h3, y_dfc_rl_h3, test_size=validation_size, random_state=seed)
+
+"""Los Aciertos fueron de un `71.79%` en la siguiente prueba:"""
+
+name='Logistic Regression'
+kfold = model_selection.KFold(n_splits=10, random_state=seed, shuffle=True)
+cv_results = model_selection.cross_val_score(dfc_model_rl3, X_train_rl3, Y_train_rl3, cv=kfold, scoring='accuracy')
+msg = "%s: %f (%f)" % (name, cv_results.mean(), cv_results.std())
+print(msg)
+
+predictions_dfc_rl3 = dfc_model_rl3.predict(X_validation_rl3)
+print(accuracy_score(Y_validation_rl3, predictions_dfc_rl3))
+
+"""Con esto podemos observar que la accuracy que posee el modelo es mejor a las anteriores con un `71.79%`, el uso de las 3 variables nos da un resultado con bastante mejoría a los anteriores
+
+### Support Vector Machine
+
+##### Validación del modelo dfc_svm para h1
+"""
+
+y_pred_svm1 = dfc_model_svc1.predict(X_test_svm1)
+
+print(classification_report(y_test_svm1, y_pred_svm1))
+
+print("Accuracy:", accuracy_score(y_test_svm1, y_pred_svm1))
+
+"""##### Validación del modelo dfc_svm para h2"""
+
+y_pred_svm2 = dfc_model_svc2.predict(X_test_svm2)
+
+print(classification_report(y_test_svm2, y_pred_svm2))
+
+print("Accuracy:", accuracy_score(y_test_svm2, y_pred_svm2))
+
+"""##### Validación del modelo dfc_svm para h3"""
+
+y_pred_svm3 = dfc_model_svc3.predict(X_test_svm3)
+
+print(classification_report(y_test_svm3, y_pred_svm3))
+
+print("Accuracy:", accuracy_score(y_test_svm3, y_pred_svm3))
+
+"""### Decision Tree Classifier
+
+##### Validación del modelo dfc_dtc para h1
+"""
+
+X_h1 = dfc_dtc2[['TravelledDistance']]
+y = dfc_dtc2['RoundWinner']
+
+X_train_dtc1, X_test_dtc1, y_train_dtc1, y_test_dtc1 = train_test_split(X_h1, y, test_size=0.3, random_state=42)
+
+# Evaluación
+y_pred_dtc1 = dfc_model_dtc1.predict(X_test_dtc1)
+print("\nReporte de clasificación:")
+print(classification_report(y_test_dtc1, y_pred_dtc1))
+
+# Graficar árbol
+plt.figure(figsize=(20, 10))
+plot_tree(dfc_model_dtc1, feature_names=X_h1.columns, class_names=['Pierde', 'Gana'], filled=True)
+plt.title(f"Árbol de decisión - H1 - TravelledDistance")
+plt.show()
+
+"""##### Validación del modelo dfc_dtc para h2"""
+
+X_h2 = dfc_dtc2[['TeamStartingEquipmentValue']]
+y = dfc_dtc2['RoundWinner']
+
+X_train_dtc2, X_test_dtc2, y_train_dtc2, y_test_dtc2 = train_test_split(X_h2, y, test_size=0.3, random_state=42)
+
+# Evaluación
+y_pred_dtc2 = dfc_model_dtc2.predict(X_test_dtc2)
+print("\nReporte de clasificación:")
+print(classification_report(y_test_dtc2, y_pred_dtc2))
+
+# Graficar árbol
+plt.figure(figsize=(20, 10))
+plot_tree(dfc_model_dtc2, feature_names=X_h2.columns, class_names=['Pierde', 'Gana'], filled=True)
+plt.title(f"Árbol de decisión - H2 - TravelledDistance")
+plt.show()
+
+"""##### Validación del modelo dfc_dtc para h3"""
+
+X_h3 = dfc_dtc2[['TeamStartingEquipmentValue', 'RoundKills', 'Survived']]
+y = dfc_dtc2['RoundWinner']
+
+X_train_dtc3, X_test_dtc3, y_train_dtc3, y_test_dtc3 = train_test_split(X_h3, y, test_size=0.3, random_state=42)
+
+# Evaluación
+y_pred_dtc3 = dfc_model_dtc3.predict(X_test_dtc3)
+print("\nReporte de clasificación:")
+print(classification_report(y_test_dtc3, y_pred_dtc3))
+
+# Graficar árbol
+plt.figure(figsize=(20, 10))
+plot_tree(dfc_model_dtc3, feature_names=X_h3.columns, class_names=['Pierde', 'Gana'], filled=True)
+plt.title(f"Árbol de decisión - H3 - TravelledDistance")
+plt.show()
+
 """## Fase 5: Deployment"""
-
-# Insertar cuantos bloques de código consideren necesarios
-
-# Realizar despliegue del modelo
