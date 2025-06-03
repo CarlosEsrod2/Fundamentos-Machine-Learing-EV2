@@ -133,15 +133,11 @@ pd.set_option('display.max_columns', None)
 
     Ganador o perdedor de ronda.
 
-    Hipotesis:
-    La cantidad de equipamiento y recursos iniciales (Valor equipamiento inicio de ronda del equipo = x) influye significativamente en el resultado de ganar o perder una ronda.
-
-  
-- Hipótesis 2 (Continua):
+- Continua:
 
     La cantidad de kills por partida en base a las distancias que se recorren dentro de las mismas
 
-- Hipótesis 3 (Clúster):
+- Clúster:
 
     Entender el enfoque de juego de los jugadores, si se centran en aportar utilidad, acabar al oponente o dividirse entre ambos puntos.
 
@@ -391,25 +387,155 @@ import seaborn
 correlations = dfc1.corr()
 correlations['RoundWinner'].apply(abs).sort_values(ascending=False)
 
-"""#### Conclusiones
+"""#### Conclusiones/Observaciones apuntadas para Y Categorica
 
-Las variables de Survived, TeamStartingEquipmentValue, RoundStartingEquipmentValue, RoundKills, RLethalGrenadesThrown y PrimaryAssaultRifle parecen ser las de mayor relación al momento de definir si es ganador de ronda.
+`Las variables de RoundWinner, Survived, TeamStartingEquipmentValue, RoundStartingEquipmentValue, PrimaryPistol, RoundKills, MatchWinner, RLethalGrenadesThrown, parecen ser las de mayor relación al momento de definir si es ganador de ronda.`
 
-Alta relación con PrimaryPistol nos da indicios de pensar en que las rondas "Eco" (rondas en las cuales los jugadores usan pistolas como arma primaria) son rondas en las cuales los jugadores intentan ganar con mas intensidad y paciencia, ya que sus armas son mas debiles que el resto de armas del juego, por ende, es necesario jugar con un buen posicionamiento y muchas veces resultando en ganar la ronda.
+**Algunas observaciones:**
 
-### Hipotesis 3 / h3_df
 
-#### Copiar datos tratados con anterioridad
+`Alta relación con PrimaryPistol nos da indicios de pensar en que las rondas "Eco" (rondas en las cuales los jugadores usan pistolas como arma primaria) son rondas en las cuales los jugadores tienen mucha mas chance de perder, ya que sus armas son mas debiles que el resto de armas del juego, algo totalmente esperado en este tipo de rondas.`
+"""
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(8,6))
+sns.countplot(data=dfc1, x="PrimaryPistol", hue="RoundWinner", palette="Set2")
+
+plt.title("Relación entre uso de PrimaryPistol y resultado de la ronda")
+plt.xlabel("¿Usó PrimaryPistol? (0=No, 1=Sí)")
+plt.ylabel("Cantidad de rondas")
+plt.legend(title="RoundWinner", labels=["Ganó (0)", "Perdió (1)"])
+plt.tight_layout()
+plt.show()
+
+"""**Variable Objetivo (Y)**: *RoundWinner*
+
+**Tipo**: *Categórica binaria*
+
+**Valores**: *0: El jugador pierde la ronda. 1: El jugador gana la ronda.*
+
+`Con el objetivo de diversificar el estudio a realizar, escogeremos las siguientes variables las cuales nosotros como autores del estudio y conocedores del videojuego creemos que representan una relación directa con una mayor oportunidad de ganar la ronda`
+
+`Cabe destacar, como ya se planteó en primer momento en este informe, estamos buscando estadisticas las cuales puedan predecir otros datos o resultados`
+
+**Variables Predictoras elegidas para este estudio (X):**
+
+**TravelledDistance**: `Distancia total recorrida por el jugador en la ronda.`
+
+**TeamStartingEquipmentValue**: `Valor total del equipamiento del equipo del jugador al inicio de la ronda.`
+
+**RoundKills**: `Número de enemigos eliminados por el jugador en la ronda.`
+
+**Survived**: `Indicador binario de si el jugador sobrevivió (1) o no (0) al final de la ronda.`
+
+`A pesar de que TravelledDistance es una variable que no tiene una buena correlación con RoundWinner (visto en la matriz de correlación), creemos que es interesante utilizarla para un modelo predictivo`
+
+##### Hipótesis del estudio:
+
+**Hipótesis 1 (H1):**
+
+`A mayor distancia recorrida por el jugador durante la ronda (TravelledDistance), mayor es la tendencia del modelo a predecir una victoria (RoundWinner = 0)`.
+
+**Tipo de relación esperada:** `Positiva.`
+
+**Variable predictora considerada:** `TravelledDistance.`
+
+**Objetivo:** `Evaluar si el movimiento activo del jugador se asocia con un mejor desempeño de ronda.`
+"""
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(8,6))
+sns.violinplot(data=dfc1, x="RoundWinner", y="TravelledDistance", palette="Set2")
+plt.title("Distribución de TravelledDistance según resultado de ronda")
+plt.xlabel("RoundWinner (0=Ganó, 1=Perdió)")
+plt.ylabel("Distancia recorrida")
+plt.tight_layout()
+plt.show()
+
+"""**Hipótesis 2 (H2):**
+
+`Un mayor valor del equipamiento del equipo del jugador (TeamStartingEquipmentValue) está asociado con una mayor frecuencia de predicciones de victoria (RoundWinner = 0) por parte del modelo.`
+
+**Tipo de relación esperada:** `Positiva.`
+
+**Variable predictora considerada:** `TeamStartingEquipmentValue.`
+
+**Objetivo:** `Estimar el impacto de los recursos iniciales en el resultado de la ronda.`
+
+"""
+
+plt.figure(figsize=(8,6))
+sns.boxplot(data=dfc1, x="RoundWinner", y="TeamStartingEquipmentValue", palette="Set3")
+plt.title("Valor del equipamiento del equipo vs resultado de la ronda")
+plt.xlabel("RoundWinner (0=Ganó, 1=Perdió)")
+plt.ylabel("TeamStartingEquipmentValue")
+plt.tight_layout()
+plt.show()
+
+"""**Hipótesis 3 (H3):**
+
+`La combinación de un mayor valor de equipamiento del equipo (TeamStartingEquipmentValue), sobrevivir a la ronda (Survived) y realizar eliminaciones (RoundKills) incrementa la probabilidad de que el modelo prediga una victoria (RoundWinner = 0).`
+
+**Tipo de relación esperada:** `Positiva conjunta.`
+
+**Variables predictoras consideradas:** `TeamStartingEquipmentValue, Survived, RoundKills.`
+
+**Objetivo:** `Evaluar cómo las variables que engloban el desempeño individual y colectivo inciden en el éxito.`
+"""
+
+sns.countplot(data=dfc1, x="Survived", hue="RoundWinner", palette="coolwarm")
+plt.title("Supervivencia del jugador vs resultado de la ronda")
+plt.xlabel("Survived (0=No, 1=Sí)")
+plt.ylabel("Cantidad de rondas")
+plt.legend(title="RoundWinner", labels=["Ganó", "Perdió"])
+plt.tight_layout()
+plt.show()
+
+sns.boxplot(data=dfc1, x="RoundWinner", y="RoundKills", palette="pastel")
+plt.title("Eliminaciones por ronda vs resultado")
+plt.xlabel("RoundWinner (0=Ganó, 1=Perdió)")
+plt.ylabel("RoundKills")
+plt.tight_layout()
+plt.show()
+
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
+
+fig = plt.figure(figsize=(10, 11))
+ax = fig.add_subplot(111, projection='3d')
+
+ax.scatter(
+    dfc1["TeamStartingEquipmentValue"],
+    dfc1["RoundKills"],
+    dfc1["Survived"],
+    c=dfc1["RoundWinner"], cmap="bwr", alpha=0.6
+)
+
+ax.set_xlabel("TeamStartingEquipmentValue")
+ax.set_ylabel("RoundKills")
+ax.set_zlabel("Survived")
+ax.set_title("Visualización 3D de variables en H3 vs RoundWinner")
+
+plt.tight_layout()
+plt.show()
+
+"""#### Cluster
+
+##### Copiar datos tratados con anterioridad
 """
 
 h3_df=cl_df5.copy()
 
-"""#### Revisar correlación entre datos"""
+"""##### Revisar correlación entre datos"""
 
 corr = h3_df.corr()
 corr['RNonLethalGrenadesThrown'].apply(abs).sort_values(ascending=False)
 
-"""#### Conclusiones
+"""##### Conclusiones
 
 Para la Hipótesis 3 (Clúster):
 * Entender el enfoque de juego de los jugadores, si se centran en aportar utilidad, acabar al oponente o dividirse entre ambos puntos.
@@ -442,15 +568,15 @@ import matplotlib.pyplot as plt
 import seaborn as sb
 # %matplotlib inline
 
-"""### Hipotesis 2 / h2_df
+"""##### Hipotesis 2 / h2_df
 
-#### Copiar datos tratados con anterioridad
+##### Copiar datos tratados con anterioridad
 """
 
 #cl_df5 contiene datos limpios y formateados
 h2_df5 = cl_df5.copy()
 
-"""#### Revisar correlación entre datos para TravelledDistance"""
+"""##### Revisar correlación entre datos para TravelledDistance"""
 
 import matplotlib.pyplot as plt
 import seaborn
@@ -459,7 +585,7 @@ import seaborn
 correlations = h2_df5.corr()
 correlations['TravelledDistance'].apply(abs).sort_values(ascending=False)
 
-"""#### Conclusiones
+"""##### Conclusiones
 
 Para la Hipótesis 2 (Continua):
 
@@ -467,77 +593,32 @@ Para la Hipótesis 2 (Continua):
 
 A partir de la matriz de correlación se observa que la variable TravelledDistance presenta una correlación baja con la cantidad de asesinatos por partida (MatchKills). Sin embargo, a pesar de no tener una influencia directa o fuerte, es una de las variables con mayor relación respecto a MatchKills dentro del conjunto analizado. Sugiriendo que, a pesar que recorrer una gran distancia no garantiza un mayor número de asesinatos, puede estar vinculado a un estilo de juego. Por lo tanto, es una métrica que vale la pena considerar en estudios más profundos.
 
-#### Evaluación de posibles sub-hipótesis
-
-Sub-hipótesis 1:
-"""
-
-
-
-
-
-
-
-"""## Fase 3: Data Preparation
+## Fase 3: Data Preparation
 
 ### Preparación de datos para Regresión
 
 ### Preparación de datos para Y Categórica
 
-Y Categórica:
+**Y Categórica:**
 
-La cantidad de equipamiento y recursos iniciales (Valor equipamiento inicio de ronda del equipo = x) influye significativamente en la probabilidad de ganar una ronda (% de ganar ronda = y). GANADOR DE RONDA (GANA O NO GANA)
+**H1:** `A mayor distancia recorrida por el jugador en la ronda (TravelledDistance), mayor es la tendencia del modelo a predecir una victoria en la ronda (RoundWinner = 0).`
 
+**H2:** `Un mayor valor total del equipamiento inicial del equipo del jugador (TeamStartingEquipmentValue) está asociado con una mayor frecuencia de victorias en las predicciones del modelo.`
 
-Hipótesis h1: TravelDistance (mas distacia = ganar)
+**H3:** `La combinación de un mayor valor del equipamiento del equipo (TeamStartingEquipmentValue), el hecho de sobrevivir la ronda (Survived) y la cantidad de eliminaciones realizadas (RoundKills) se asocia con una mayor proporción de rondas ganadas predichas por el modelo.`
 
-Hipótesis h2: TeamStartingEquipmentValue (valor total team)
+`***Notación utilizada:***`
 
-Hipótesis h3: 'TeamStartingEquipmentValue', 'RoundStartingEquipmentValue', 'RoundKills' (todas = ganar)
+**Clasificacion `(dfc_)`:**
 
-comprar los 3 modelos
+  **- Regresion logistica:**
+    `dfc_rl`
 
-RoundWinner	1.000000
-Survived	0.359354
-TeamStartingEquipmentValue	0.327825
-RoundStartingEquipmentValue	0.302564
-PrimaryPistol	0.272089
-RoundKills	0.269227
-MatchWinner	0.229544
-RLethalGrenadesThrown	0.222467
-PrimaryAssaultRifle	0.213736
-RoundHeadshots	0.154698
-Team_Terrorist	0.153498
-Team_CounterTerrorist	0.153498
-RNonLethalGrenadesThrown	0.142072
-RoundFlankKills	0.126874
-RoundAssists	0.121881
+  **- SVM:**
+    `dfc_svm`
 
-Notación utilizada:
-
-Clasificacion (dfc_):
-  - Regresion logistica:
-    - dfc_rl
-
-  - SVM:
-    - dfc_svm
-
-  - Decission Tree Classifier:
-    - dfc_dtc
-
-Hipótesis 1 (Categórica):
-
-La cantidad de equipamiento y recursos iniciales (Valor equipamiento inicio de ronda del equipo = x) influye significativamente en la probabilidad de ganar una ronda (% de ganar ronda = y).
-
-Hipótesis
-
-h1: A mayor distancia recorrida en la ronda, mas probabilidad de ganar, `TravelDistance` (mas distacia = ganar)
-
-h2: Un mayor valor total del equipamiento del equipo perteneciente al jugador en la ronda, influye de manera directa en la probabilidad de ganar `TeamStartingEquipmentValue` (valor total equipo)
-
-h3: al realcionar el valor total del equipamiento del equipo `TeamStartingEquipmentValue` con el sobrevivir a la ronda `Survive`, y la cantidad del bajas realizadas en la ronda `RoundKills` podemos ver una relacion directa en la probabilidad de ganar la ronda
-
-comparar los 3 modelos
+  **- Decission Tree Classifier:**
+    `dfc_dtc`
 """
 
 # Commented out IPython magic to ensure Python compatibility.
@@ -561,7 +642,7 @@ dfc_dtc = cleandataframe.copy()
 
 """##### Visualización de la tabla"""
 
-#RoundWinner (0 - perder / 1 - gana)
+#RoundWinner (0 - gana  / 1 - perder)
 
 dfc_rl.head()
 
@@ -616,46 +697,101 @@ dfc_dtc2
 dfc_rl2.hist(figsize=(12, 8))
 plt.show()
 
-#Interrelacionamos las entradas para ver la concentración lineal las salidas de RoundWinner por colores
-sb.pairplot(dfc_rl1, hue='RoundWinner',size=4,vars=['RoundWinner', 'TravelledDistance', 'TeamStartingEquipmentValue', 'RoundKills', 'Survived'],kind='reg')
-
 """#### Regresión Logística
 
 ##### H1: A mayor distancia recorrida en la ronda, mas probabilidad de ganar, TravelDistance (mas distacia = ganar)
+
+`Se realiza un arreglo para matriz unidimensional`
 """
 
 dfc_rl3 = dfc_rl2.copy()
 
-#X = np.array(dfc_rl3.drop(['RoundWinner'],axis=1))
 X_dfc_rl_h1 = np.array(dfc_rl3['TravelledDistance']).reshape(-1, 1)
 y_dfc_rl_h1 = np.array(dfc_rl3['RoundWinner'])
 X_dfc_rl_h1.shape
 
-#Se crea el modelo
+"""`La distribución de los datos de esta variable no es óptima ya que son muy similares para RoundWinner 0 y 1`"""
+
+plt.figure(figsize=(10, 5))
+sns.violinplot(
+    x='RoundWinner',
+    y='TravelledDistance',
+    data=dfc_rl3,
+    palette='Set2',
+    inner='box'
+)
+plt.title('Densidad de TravelledDistance por RoundWinner')
+plt.xlabel('RoundWinner (0 = Ganó, 1 = Perdió)')
+plt.ylabel('TravelledDistance')
+plt.show()
+
+"""`Con este histograma podemos ver la similitud de la distribución de los datos de esta variable no parece ser óptima ya que son muy similares para RoundWinner 0 y 1`"""
+
+plt.figure(figsize=(10, 5))
+sns.histplot(
+    data=dfc_rl3,
+    x='TravelledDistance',
+    hue='RoundWinner',
+    kde=True,
+    bins=30,
+    palette='Set2',
+    element='step'
+)
+plt.title('Histograma de TravelledDistance por RoundWinner')
+plt.xlabel('TravelledDistance')
+plt.ylabel('Frecuencia')
+plt.show()
+
+"""`Se crea el modelo`"""
+
 dfc_model_rl1 = linear_model.LogisticRegression()
 dfc_model_rl1.fit(X_dfc_rl_h1,y_dfc_rl_h1)
 
-predictions_dfc_rl1 = dfc_model_rl1.predict(X_dfc_rl_h1)
-print(predictions_dfc_rl1[0:5])
+"""##### H2: Un mayor valor total del equipamiento del equipo perteneciente al jugador en la ronda, influye de manera directa en la probabilidad de ganar TeamStartingEquipmentValue (valor total equipo)
 
-dfc_model_rl1.score(X_dfc_rl_h1,y_dfc_rl_h1)
+`Se realiza un arreglo para matriz unidimensional`
+"""
 
-"""##### H2: Un mayor valor total del equipamiento del equipo perteneciente al jugador en la ronda, influye de manera directa en la probabilidad de ganar TeamStartingEquipmentValue (valor total equipo)"""
-
-#Se crea el modelo
 dfc_rl3 = dfc_rl2.copy()
 
 X_dfc_rl_h2 = np.array(dfc_rl3['TeamStartingEquipmentValue']).reshape(-1, 1)
 y_dfc_rl_h2 = np.array(dfc_rl3['RoundWinner'])
 X_dfc_rl_h2.shape
 
+"""`La distribución de los datos para ganadores parece aumentar junto al TeamStartingEquipmentValue`"""
+
+plt.figure(figsize=(10, 5))
+sns.violinplot(
+    x='RoundWinner',
+    y='TeamStartingEquipmentValue',
+    data=dfc_rl3,
+    palette='coolwarm',
+    inner='box'
+)
+plt.title('Densidad de TeamStartingEquipmentValue por RoundWinner')
+plt.xlabel('RoundWinner')
+plt.ylabel('TeamStartingEquipmentValue')
+plt.show()
+
+"""`La distribución de los datos nos indica que los ganadores parecen aumentar junto al TeamStartingEquipmentValue`"""
+
+plt.figure(figsize=(10, 5))
+sns.histplot(
+    data=dfc_rl3,
+    x='TeamStartingEquipmentValue',
+    hue='RoundWinner',
+    kde=True,
+    palette='coolwarm',
+    bins=30,
+    element='step'
+)
+plt.title('Histograma de TeamStartingEquipmentValue por RoundWinner')
+plt.xlabel('TeamStartingEquipmentValue')
+plt.ylabel('Frecuencia')
+plt.show()
+
 dfc_model_rl2 = linear_model.LogisticRegression()
 dfc_model_rl2.fit(X_dfc_rl_h2, y_dfc_rl_h2)
-
-predictions_dfc_rl2 = dfc_model_rl2.predict(X_dfc_rl_h2)
-print(predictions_dfc_rl2[0:5])
-
-dfc_model_rl2.score(X_dfc_rl_h2, y_dfc_rl_h2)
 
 """##### H3: Al relacionar el valor total del equipamiento del equipo TeamStartingEquipmentValue con el sobrevivir a la ronda Survive, y la cantidad del bajas realizadas en la ronda RoundKills podemos ver una relacion directa en la probabilidad de ganar la ronda"""
 
@@ -665,13 +801,37 @@ X_dfc_rl_h3 = np.array(dfc_rl3[['TeamStartingEquipmentValue', 'Survived', 'Round
 y_dfc_rl_h3 = np.array(dfc_rl3['RoundWinner'])
 X_dfc_rl_h3.shape
 
+"""`El siguiente grafico nos demuestra que al relacionar estas tres variables podemos obtener un resultado interesante ya que todas estas variables tiene una correlación con RoundWinner y se demuestra gráficamente teniendo una buena lógica`
+
+
+
+
+"""
+
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
+
+fig = plt.figure(figsize=(9, 12))
+ax = fig.add_subplot(111, projection='3d')
+
+colors = ['green' if winner == 0 else 'red' for winner in y_dfc_rl_h3]
+
+ax.scatter(
+    X_dfc_rl_h3[:, 0],
+    X_dfc_rl_h3[:, 1],
+    X_dfc_rl_h3[:, 2],
+    c=colors,
+    alpha=0.6
+)
+
+ax.set_xlabel('TeamStartingEquipmentValue')
+ax.set_ylabel('Survived')
+ax.set_zlabel('RoundKills')
+plt.title('Relación entre 3 variables y RoundWinner (0=Ganó, 1=Perdió)')
+plt.show()
+
 dfc_model_rl3 = linear_model.LogisticRegression()
 dfc_model_rl3.fit(X_dfc_rl_h3, y_dfc_rl_h3)
-
-predictions_dfc_rl3 = dfc_model_rl3.predict(X_dfc_rl_h3)
-print(predictions_dfc_rl3[0:5])
-
-dfc_model_rl3.score(X_dfc_rl_h3, y_dfc_rl_h3)
 
 """#### SVM"""
 
@@ -712,17 +872,24 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import seaborn as sns
 
-plt.figure(figsize=(8, 4))
-sns.stripplot(data=dfc_svm2, x='RoundWinner', y='TravelledDistance', jitter=0.25, palette='Set1')
-plt.title("H1 - TravelledDistance vs RoundWinner")
-plt.xlabel("RoundWinner (0=Pierde, 1=Gana)")
-plt.ylabel("TravelledDistance")
+"""`Con el siguiente grafico unidimensional podemos ver que no existiría un buen punto de corte para el gráfico, por ende, podemos esperar que SVC no haga un buen trabajo`"""
+
+import matplotlib.pyplot as plt
+
+X_h1 = dfc_svm2['TravelledDistance']
+y_h1 = dfc_svm2['RoundWinner']
+
+plt.figure(figsize=(12, 2))
+plt.scatter(X_h1, [0]*len(X_h1), c=y_h1, cmap='bwr', alpha=0.5, edgecolors='k')
+plt.xlabel('TravelledDistance')
+plt.title('H1: Relación entre distancia recorrida y RoundWinner (0=Ganó, 1=Perdió)')
+plt.yticks([])
 plt.grid(True)
 plt.show()
 
 # Escalado
 scaler = StandardScaler()
-X_h1_scaled = scaler.fit_transform(X_h1)
+X_h1_scaled = scaler.fit_transform(X_h1.values.reshape(-1, 1))
 
 # Entrenamiento
 X_train_svm1, X_test_svm1, y_train_svm1, y_test_svm1 = train_test_split(X_h1_scaled, y, test_size=0.2, random_state=42)
@@ -734,7 +901,7 @@ dfc_model_svc1.fit(X_train_svm1, y_train_svm1)
 X_h2 = dfc_svm2[['TeamStartingEquipmentValue']]
 y = dfc_svm2['RoundWinner']
 
-"""Podemos observar que no existe una linea trazable clara"""
+"""`Podemos observar que no existe una linea trazable clara`"""
 
 plt.figure(figsize=(8, 4))
 sns.stripplot(data=dfc_svm2, x='RoundWinner', y='TeamStartingEquipmentValue', jitter=0.25, palette='Set2')
@@ -745,19 +912,8 @@ plt.grid(True)
 plt.show()
 
 X_h2 = dfc_svm2[['TeamStartingEquipmentValue']]
-X_h2_scaled = scaler.fit_transform(X_h2)
+X_h2_scaled = scaler.fit_transform(X_h2.values.reshape(-1, 1))
 y = dfc_svm2['RoundWinner']
-
-"""Podemos observar que no existe mucha mejora entre los tres modelos de SVM"""
-
-#COMPARACION ENTRE VARIOS MODELOS
-X_train_svm2, X_test_svm2, y_train_svm2, y_test_svm2 = train_test_split(X_h2_scaled, y, test_size=0.2, random_state=42)
-for k in ['linear', 'rbf', 'poly']:
-    model = SVC(kernel=k)
-    model.fit(X_train_svm2, y_train_svm2)
-    y_pred = model.predict(X_test_svm2)
-    print(f"Kernel: {k}")
-    print("Accuracy:", accuracy_score(y_test_svm2, y_pred))
 
 X_train_svm2, X_test_svm2, y_train_svm2, y_test_svm2 = train_test_split(X_h2_scaled, y, test_size=0.2, random_state=42)
 
@@ -870,17 +1026,23 @@ X_h1 = dfc_dtc2[['TravelledDistance']]
 y = dfc_dtc2['RoundWinner']
 dfc_model_dtc1 = entrenar_y_graficar_arbol(X_h1, y, "H1 - TravelledDistance")
 
+dfc_model_dtc1
+
 """##### H2: Un mayor valor total del equipamiento del equipo perteneciente al jugador en la ronda, influye de manera directa en la probabilidad de ganar TeamStartingEquipmentValue (valor total equipo)"""
 
 X_h2 = dfc_dtc2[['TeamStartingEquipmentValue']]
 y = dfc_dtc2['RoundWinner']
 dfc_model_dtc2 = entrenar_y_graficar_arbol(X_h2, y, "H2 - TeamStartingEquipmentValue")
 
+dfc_model_dtc2
+
 """##### H3: Al relacionar el valor total del equipamiento del equipo TeamStartingEquipmentValue con el sobrevivir a la ronda Survive, y la cantidad del bajas realizadas en la ronda RoundKills podemos ver una relacion directa en la probabilidad de ganar la ronda"""
 
 X_h3 = dfc_dtc2[['TeamStartingEquipmentValue', 'RoundKills', 'Survived']]
 y = dfc_dtc2['RoundWinner']
 dfc_model_dtc3 = entrenar_y_graficar_arbol(X_h3, y, "H3 - Multi Feature")
+
+dfc_model_dtc3
 
 """## Fase 5: Evaluation"""
 
@@ -890,7 +1052,7 @@ dfc_model_dtc3 = entrenar_y_graficar_arbol(X_h3, y, "H3 - Multi Feature")
 
 """### Validación Regresión Logística
 
-#### Regresión logística
+### Regresión logística
 
 ##### Validación del modelo dfc_rl para h1
 """
